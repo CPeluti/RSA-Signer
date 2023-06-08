@@ -4,3 +4,6 @@ def test_key_expand():
 
 def test_vec_to_matrix():
     assert aes.vec_to_matrix([1, 2, 3, 4], 2) == [[1,2], [3, 4]]
+
+def test_rot_word():
+    assert aes.rot_word([1, 2, 3, 4]) == [[2, 3, 4, 1]]
