@@ -1,4 +1,5 @@
 import random
+import copy
 
 Sbox = [    0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
             0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -20,6 +21,12 @@ Sbox = [    0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x
 
 Rcon = [ 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36 ]
 
+def xor(l1, l2):
+    res = []
+    for a, b in zip(l1, l2):
+        res.append(a^b)
+    return res
+
 def vec_to_matrix(v, size):
     matrix_keys = []
     while v != []:
@@ -37,31 +44,60 @@ def sub_word(rotated_v):
     sub_v = []
     for b in rotated_v:
         sub_v.append(Sbox[b])
-    print(sub_v)
     return sub_v
 
 def key_expand(key):
     round_keys = []  # todas as round keys
     result_matrix = [[], [], [], []]
     temp = []
+    rcon_var = 1
     key = key.to_bytes(16, byteorder = 'big')
     key_matrix = vec_to_matrix(list(key), 4)
+    round_keys.append(key_matrix[0]+key_matrix[1]+key_matrix[2]+key_matrix[3])
     for i in range(0, 40):
+        # print(f"KETMTX: {key_matrix}")
+        # print(f"I:{i}")
+
         if(i % 4 == 0):
-            round_keys.append(result_matrix)
-            rotated_v = rot_word(key_matrix[3])
+            if(i != 0):
+                print(f"RESULT: {result_matrix}")
+                key_matrix=result_matrix
+                result_matrix = result_matrix[0]+result_matrix[1]+result_matrix[2]+result_matrix[3]
+                round_keys.append(result_matrix) 
+                result_matrix = [[], [], [], []]
+
+            print(f"AQUImatx:{key_matrix}")
+            temp2=copy.deepcopy(key_matrix[3])
+            rotated_v = rot_word(temp2)
+            print(f"AQUImatx:{key_matrix}")
+
+            print(f"--ROTATED: {rotated_v}")
             sub_v = sub_word(rotated_v)
-            temp = xor(sub_v, [Rcon[i//4], 0, 0, 0])
+            print(f"SUB: {sub_v}")
+            print(f"R:{rcon_var}")
+            print(f"Rval:{Rcon[rcon_var]}")
+            temp = xor(sub_v, [Rcon[rcon_var], 0, 0, 0])
+            rcon_var+=1
+            print(f"RCONXOR:{temp}")
             temp = xor(temp, key_matrix[0])
-            for (index, b) in enumerate(temp):
-                result_matrix[0][index] = b
+            print(f"EXPANDEDXOR:{temp}")
+            # result_matrix[i%4]=temp
+
         else:
-            temp = xor(temp, key_matrix[i//4])
-            for (index, b) in enumerate(temp):
-                result_matrix[i//4][index] = b
-    return result_matrix
+            print(f"temp:{temp}")
+            temp = xor(temp, key_matrix[i%4])
+            print(f"EXPANDEDXOR:{temp}")
+        result_matrix[i%4]=temp
+
+    # print(result_matrix)
+    result_matrix = result_matrix[0]+result_matrix[1]+result_matrix[2]+result_matrix[3]
+    round_keys.append(result_matrix) 
+    return round_keys
 
 def run():
     key=random.randint(10**31, 2**128)
+    key=00000000000000000000000000000000
     print(f"key: {key}")
     round_keys = key_expand(key)
+    print(f"ROUND: {round_keys}")
+
