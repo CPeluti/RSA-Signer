@@ -22,9 +22,18 @@ Sbox = [    0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x
 Rcon = [ 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36 ]
 
 def xor(l1, l2):
-    res = []
-    for a, b in zip(l1, l2):
-        res.append(a^b)
+    check1 = all(isinstance(l, list) for l in l1)
+    check2 = all(isinstance(l, list) for l in l2)
+    if(not (check1 and check2)):
+        res = []
+        for a, b in zip(l1, l2):
+            res.append(a^b)
+    else:
+        res=[[], [], [], []]
+        for i in range(4):
+            for a, b in zip(l1[i], l2[i]):
+                res[i].append(a^b)
+
     return res
 
 def vec_to_matrix(v, size):
@@ -34,6 +43,8 @@ def vec_to_matrix(v, size):
         v = v[size:]
     return matrix_keys
 
+# -------------- EXPANSÃO DA CHAVE -------------------------------#
+
 def rot_word(last_v_keys):
     last_v_keys[1], last_v_keys[0] = last_v_keys[0], last_v_keys[1]
     last_v_keys[2], last_v_keys[1] = last_v_keys[1], last_v_keys[2]
@@ -41,9 +52,16 @@ def rot_word(last_v_keys):
     return last_v_keys
 
 def sub_word(rotated_v):
-    sub_v = []
-    for b in rotated_v:
-        sub_v.append(Sbox[b])
+    check = all(isinstance(l, list) for l in rotated_v)
+    if(not check):
+        sub_v = []
+        for b in rotated_v:
+            sub_v.append(Sbox[b])
+    else:
+        sub_v=[[], [], [], []]
+        for i in range(4):
+            for b in rotated_v[i]:
+                sub_v[i].append(Sbox[b])
     return sub_v
 
 def key_expand(key):
@@ -53,51 +71,88 @@ def key_expand(key):
     rcon_var = 1
     key = key.to_bytes(16, byteorder = 'big')
     key_matrix = vec_to_matrix(list(key), 4)
-    round_keys.append(key_matrix[0]+key_matrix[1]+key_matrix[2]+key_matrix[3])
+    # round_keys.append(key_matrix[0]+key_matrix[1]+key_matrix[2]+key_matrix[3])
+    round_keys.append(key_matrix)
     for i in range(0, 40):
-        # print(f"KETMTX: {key_matrix}")
-        # print(f"I:{i}")
 
         if(i % 4 == 0):
             if(i != 0):
-                print(f"RESULT: {result_matrix}")
                 key_matrix=result_matrix
-                result_matrix = result_matrix[0]+result_matrix[1]+result_matrix[2]+result_matrix[3]
+                # result_matrix = result_matrix[0]+result_matrix[1]+result_matrix[2]+result_matrix[3]
                 round_keys.append(result_matrix) 
                 result_matrix = [[], [], [], []]
 
-            print(f"AQUImatx:{key_matrix}")
             temp2=copy.deepcopy(key_matrix[3])
             rotated_v = rot_word(temp2)
-            print(f"AQUImatx:{key_matrix}")
-
-            print(f"--ROTATED: {rotated_v}")
             sub_v = sub_word(rotated_v)
-            print(f"SUB: {sub_v}")
-            print(f"R:{rcon_var}")
-            print(f"Rval:{Rcon[rcon_var]}")
             temp = xor(sub_v, [Rcon[rcon_var], 0, 0, 0])
             rcon_var+=1
-            print(f"RCONXOR:{temp}")
             temp = xor(temp, key_matrix[0])
-            print(f"EXPANDEDXOR:{temp}")
-            # result_matrix[i%4]=temp
-
         else:
-            print(f"temp:{temp}")
             temp = xor(temp, key_matrix[i%4])
-            print(f"EXPANDEDXOR:{temp}")
         result_matrix[i%4]=temp
 
-    # print(result_matrix)
-    result_matrix = result_matrix[0]+result_matrix[1]+result_matrix[2]+result_matrix[3]
+    # result_matrix = result_matrix[0]+result_matrix[1]+result_matrix[2]+result_matrix[3]
     round_keys.append(result_matrix) 
     return round_keys
+
+# --------------------- CIFRAÇÃO ------------------------------ #
+def addRoundKey(input, key):
+    return xor(input, key)
+
+def shiftRows(state):
+    for i in range(1, 4):
+        for j in range(i):
+            state[i] = rot_word(state[i])
+    return state
+
+def xtime(x):
+    if(x & 0x80):
+        return ((x << 1) ^ 0x1B) & 0xFF
+    return x << 1
+
+def mixAColumn(col):
+    all_columns_xor = col[0] ^ col[1] ^ col[2] ^ col[3]
+    col0 = col[0]
+    col[0] = xtime(col[0] ^ col[1]) ^ all_columns_xor
+    col[1] = xtime(col[1] ^ col[2]) ^ all_columns_xor
+    col[2] = xtime(col[2] ^ col[3]) ^ all_columns_xor
+    col[3] = xtime(col0 ^ col[3]) ^ all_columns_xor
+    return col
+
+def mixColumns(state):
+    for i in range(4):
+        state[i] = mixAColumn(state[i])
+    return state
+
+def cypher(input, round_keys):
+    # round inicial
+    input = input.to_bytes(16, byteorder = 'big')
+    input = vec_to_matrix(list(input), 4)
+    state = addRoundKey(input, round_keys[0]) 
+
+    # rounds de 1 a 9
+    for i in range(1, 10):
+        state = sub_word(state)
+        state = shiftRows(state)
+        state = mixColumns(state)
+        state = addRoundKey(state, round_keys[i])
+
+    # ultimo round
+    state = sub_word(state)
+    state = shiftRows(state)
+    state = addRoundKey(state, round_keys[10])
+
+    return state
 
 def run():
     key=random.randint(10**31, 2**128)
     key=00000000000000000000000000000000
-    print(f"key: {key}")
+    # input=00000101030307070f0f1f1f3f3f7f7f
+    input=00000000000000000000000000000000
+
     round_keys = key_expand(key)
-    print(f"ROUND: {round_keys}")
+    cyphered_text = cypher(input, round_keys)
+    print(cyphered_text)
+    # print(f"ROUND: {round_keys}")
 
