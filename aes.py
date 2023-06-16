@@ -101,9 +101,9 @@ def addRoundKey(input, key):
     return xor(input, key)
 
 def shiftRows(state):
-    for i in range(1, 4):
-        for j in range(i):
-            state[i] = rot_word(state[i])
+    state[0][1], state[1][1], state[2][1], state[3][1] = state[1][1], state[2][1], state[3][1], state[0][1]
+    state[0][2], state[1][2], state[2][2], state[3][2] = state[2][2], state[3][2], state[0][2], state[1][2]
+    state[0][3], state[1][3], state[2][3], state[3][3] = state[3][3], state[0][3], state[1][3], state[2][3]
     return state
 
 def xtime(x):
@@ -114,10 +114,10 @@ def xtime(x):
 def mixAColumn(col):
     all_columns_xor = col[0] ^ col[1] ^ col[2] ^ col[3]
     col0 = col[0]
-    col[0] = xtime(col[0] ^ col[1]) ^ all_columns_xor
-    col[1] = xtime(col[1] ^ col[2]) ^ all_columns_xor
-    col[2] = xtime(col[2] ^ col[3]) ^ all_columns_xor
-    col[3] = xtime(col0 ^ col[3]) ^ all_columns_xor
+    col[0] ^= xtime(col[0] ^ col[1]) ^ all_columns_xor
+    col[1] ^= xtime(col[1] ^ col[2]) ^ all_columns_xor
+    col[2] ^= xtime(col[2] ^ col[3]) ^ all_columns_xor
+    col[3] ^= xtime(col0 ^ col[3]) ^ all_columns_xor
     return col
 
 def mixColumns(state):
@@ -153,6 +153,6 @@ def run():
 
     round_keys = key_expand(key)
     cyphered_text = cypher(input, round_keys)
-    print(cyphered_text)
+    # print(cyphered_text)
     # print(f"ROUND: {round_keys}")
 
