@@ -166,18 +166,32 @@ def cipher(input, key):
         state = shiftRows(state)
         state = mixColumns(state)
         state = addRoundKey(state, round_keys[i])
+        # p=""
+        # for l in state:
+        #     for n in l:
+        #         p+=(hex(n)[2:])
+        # print(f"MIX ROUND {i} = {p}")
 
     # ultimo round
     state = sub_word(state)
     state = shiftRows(state)
     state = addRoundKey(state, round_keys[10])
 
+    # p=""
+    # for l in state:
+    #     for n in l:
+    #         p+=(hex(n)[2:])
+
     ciphered_text=""
     for l in state:
         for n in l:
+            if(len(hex(n)[2:]) == 1):
+                ciphered_text+="0"
             ciphered_text+=(hex(n)[2:])
+    # print(f"ROUND 10 = {ciphered_text}")
+    ciphered_text=int(ciphered_text, base=16)
 
-    return int(ciphered_text, 16)
+    return ciphered_text
 
 # ------------------------ DECIFRAÇÃO ------------------------#
 
@@ -224,6 +238,8 @@ def decipher(input, key):
     deciphered_text=""
     for l in state:
         for n in l:
+            if(len(hex(n)[2:]) == 1):
+                deciphered_text+="0"
             deciphered_text+=(hex(n)[2:])
 
     return int(deciphered_text, 16)
@@ -244,13 +260,15 @@ def run():
             print("2 - Decifração em AES")
             op = input("Digite sua escolha: ")
             if(op == "1"):
-                key=random.randint(10**31, 2**128)
-                # key=00000000000000000000000000000000
-                print(f"Essa é a chave: {key}")
+                print("---------------- CIFRAÇÃO -----------------")
                 msg = input("Digite a mensagem que será cifrada: ")
+                # msg=random.randint(10**31, 2**128)
+                key=random.randint(10**31, 2**128)
+                print(f"Essa é a chave: {key}")
                 ciphered_text = cipher(int(msg), key)
                 print(ciphered_text)
             else:
+                print("---------------- DECIFRAÇÃO -----------------")
                 msg = input("Digite a mensagem que será decifrada: ")
                 key = input("Digite a chave: ")
                 deciphered_text = decipher(int(msg), int(key))
