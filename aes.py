@@ -244,6 +244,10 @@ def decipher(input, key):
 
     return int(deciphered_text, 16)
 
+# ------------------------ GCM ---------------------------#
+def gcmCipher(msg, key):
+    return
+
 def run():
     # key=00000000000000000000000000000000
     # input=00000000000000000000000000000000
