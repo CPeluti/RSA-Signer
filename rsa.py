@@ -25,11 +25,10 @@ def isPrime(n, k):
 
 def genPrime():
     while(True):
-        num = random.randint(2**1024, 2**2048)
-        print(f"trying {num}")
+        num = random.randint(2,2**1024)
         if(isPrime(num,15)):
-            print(num)
             return num
 def run():
-    genPrime()
+    teste = genPrime()
     print("rsa")
+    print(teste)
