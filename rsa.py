@@ -71,20 +71,31 @@ def genKey(p, q, e=None):
     d = genPrivateKey(e, p, q)
     return ((e, n), (d, n)) # (public, private)
 
-def oaep(message, public_key):
-    seed = random.getrandbits(512).to_bytes(512,'big')
+def oaep_encode(message, public_key):
+    seed = random.getrandbits(512).to_bytes(64,'big')
     #result da hash da função g
     g = hashlib.sha3_512()
     g.update(seed)
     res_g = g.digest()
+    # print(len(res_g))
+
     m = message.encode('ascii')
-    m = base64.b64encode(m)
+    # m = base64.b64encode(m)
     m = m+(len(res_g)-len(m))*b'\0'
-    m_hex = m.hex()
-    res_g_hex = res_g.hex()
-    xor = hex(int(m_hex, 16) ^ int(res_g_hex,16))
+    res_g = int.from_bytes(res_g, 'big')
+    m = int.from_bytes(m,'big')
+    x = m^res_g
+    x = x.to_bytes(64,'big')
+    h=hashlib.sha3_512()
+    h.update(x)
+    res_h = h.digest()
+    # seed_hex = seed.hex()
+    seed_int = int.from_bytes(seed,'big')
+    res_h = int.from_bytes(res_h,'big')
+    y = res_h ^ seed_int
     # xor_m_with_res_g = hex(res_g_hex)^hex(m_hex)
-    print(xor)
+    print(len(x))
+    print(len(y.to_bytes(64,'big')))
     return g.digest()
 
 def run():
@@ -101,5 +112,5 @@ def run():
     # k = genKey(p, q, e)
     # print(k)
     
-    oaep("teste", "teste2")
+    oaep_encode("teste", "teste2")
     return
