@@ -71,32 +71,48 @@ def genKey(p, q, e=None):
     d = genPrivateKey(e, p, q)
     return ((e, n), (d, n)) # (public, private)
 
-def oaep_encode(message, public_key):
-    seed = random.getrandbits(512).to_bytes(64,'big')
-    #result da hash da função g
-    g = hashlib.sha3_512()
-    g.update(seed)
-    res_g = g.digest()
-    # print(len(res_g))
+def generate_random_number(bits):
+    return random.getrandbits(bits).to_bytes(64, 'big')
 
+def gen_message(message, size):
     m = message.encode('ascii')
-    # m = base64.b64encode(m)
-    m = m+(len(res_g)-len(m))*b'\0'
-    res_g = int.from_bytes(res_g, 'big')
-    m = int.from_bytes(m,'big')
-    x = m^res_g
-    x = x.to_bytes(64,'big')
-    h=hashlib.sha3_512()
-    h.update(x)
-    res_h = h.digest()
-    # seed_hex = seed.hex()
-    seed_int = int.from_bytes(seed,'big')
-    res_h = int.from_bytes(res_h,'big')
-    y = res_h ^ seed_int
+    m = m+(size-len(m))*b'\0'
+    return m
+
+def hash(input):
+    f = hashlib.sha3_512()
+    f.update(input)
+    return f.digest()
+
+def xor(a,b):
+    int_a=int.from_bytes(a,'big')
+    int_b=int.from_bytes(b,'big')
+    res = int_a^int_b
+    return res.to_bytes(64,'big')
+
+def oaep_encode(message, public_key):
+    seed = generate_random_number(512)
+    #result da hash da função g
+    res_g = hash(seed)
+
+    # mensagem com o padding
+    m =  gen_message(message, len(res_g))
+
+    # primeiro xor
+    x = xor(res_g, m)
+    
+    res_h = hash(x)    
+
+    y = xor(res_h, seed)
     # xor_m_with_res_g = hex(res_g_hex)^hex(m_hex)
-    print(len(x))
-    print(len(y.to_bytes(64,'big')))
-    return g.digest()
+    return {"maskedDB": x, "maskedSeed": y}
+
+def oaep_decode(maskedSeed, maskedDB):
+    seedMask = hash(maskedDB)
+    seed = xor(seedMask, maskedSeed)
+    dbMask = hash(seed)
+    db = xor(dbMask, maskedDB)
+    return db.decode('utf8').strip("\0")
 
 def run():
     # gera os dois números primos
@@ -112,5 +128,6 @@ def run():
     # k = genKey(p, q, e)
     # print(k)
     
-    oaep_encode("teste", "teste2")
+    res = oaep_encode("teste", "teste2")
+    res2= oaep_decode(res["maskedSeed"], res["maskedDB"])
     return
