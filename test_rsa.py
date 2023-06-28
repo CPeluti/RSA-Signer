@@ -20,3 +20,5 @@ def test_genKey2():
 
 def test_genKey3():
     assert rsa.genKey(5, 17, 11) == ((11, 85), (35, 85))
+def teste_oaep():
+    assert rsa.oaep("teste","teste")

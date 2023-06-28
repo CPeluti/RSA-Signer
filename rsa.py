@@ -1,5 +1,6 @@
 import random
-
+import hashlib
+import base64
 def millerRabin(d,n):
     a  = 2 + random.randint(1,(n-4))
     x = pow(a,d,n)
@@ -26,7 +27,7 @@ def isPrime(n, k):
 
 def genPrime():
     while(True):
-        num = random.randint(2,2**1024)
+        num = random.getrandbits(1024)
         if(isPrime(num,15)):
             return num
         
@@ -70,6 +71,22 @@ def genKey(p, q, e=None):
     d = genPrivateKey(e, p, q)
     return ((e, n), (d, n)) # (public, private)
 
+def oaep(message, public_key):
+    seed = random.getrandbits(512).to_bytes(512,'big')
+    #result da hash da função g
+    g = hashlib.sha3_512()
+    g.update(seed)
+    res_g = g.digest()
+    m = message.encode('ascii')
+    m = base64.b64encode(m)
+    m = m+(len(res_g)-len(m))*b'\0'
+    m_hex = m.hex()
+    res_g_hex = res_g.hex()
+    xor = hex(int(m_hex, 16) ^ int(res_g_hex,16))
+    # xor_m_with_res_g = hex(res_g_hex)^hex(m_hex)
+    print(xor)
+    return g.digest()
+
 def run():
     # gera os dois números primos
     # p = genPrime()
@@ -77,10 +94,12 @@ def run():
     # e = 65537
     # print(f"NUMERO P = {p}")
     # print(f"NUMERO Q = {q}")
-    p = 5
-    q = 17
-    e = 11
+    # p = 5
+    # q = 17
+    # e = 11
 
-    k = genKey(p, q, e)
-    print(k)
+    # k = genKey(p, q, e)
+    # print(k)
+    
+    oaep("teste", "teste2")
     return
