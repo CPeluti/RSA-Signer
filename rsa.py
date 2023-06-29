@@ -90,7 +90,7 @@ def xor(a,b):
     res = int_a^int_b
     return res.to_bytes(64,'big')
 
-def oaep_encode(message, public_key):
+def oaep_encode(message):
     seed = generate_random_number(512)
     #result da hash da função g
     res_g = hash(seed)
@@ -107,12 +107,20 @@ def oaep_encode(message, public_key):
     # xor_m_with_res_g = hex(res_g_hex)^hex(m_hex)
     return {"maskedDB": x, "maskedSeed": y}
 
+def rsa_cypher(message, public_key):
+    e, n = public_key
+    return pow(message, e, n)
+
 def oaep_decode(maskedSeed, maskedDB):
     seedMask = hash(maskedDB)
     seed = xor(seedMask, maskedSeed)
     dbMask = hash(seed)
     db = xor(dbMask, maskedDB)
     return db.decode('utf8').strip("\0")
+
+def rsa_decypher(cypher_text, private_key):
+    d, n = private_key
+    return pow(cypher_text, d, n)
 
 def run():
     # gera os dois números primos
@@ -128,6 +136,78 @@ def run():
     # k = genKey(p, q, e)
     # print(k)
     
-    res = oaep_encode("teste", "teste2")
-    res2= oaep_decode(res["maskedSeed"], res["maskedDB"])
+    # res = oaep_encode("teste")
+    # res2= oaep_decode(res["maskedSeed"], res["maskedDB"])
+    # print(res, res2)
+
+    print("Escolha o modo do RSA:")
+    print("1 - RSA")
+    print("2 - RSA-OAEP")
+    op = input("Digite sua escolha: ")
+    match op:
+        case "1":
+            print("1 - Cifração em RSA")
+            print("2 - Decifração em RSA")
+            op = input("Digite sua escolha: ")
+            if(op == "1"):
+                print("---------------- CIFRAÇÃO -----------------")
+                msg = input("Digite a mensagem que será cifrada: ")
+                p = genPrime()
+                q = genPrime()
+                e = 65537
+                keys = genKey(p, q, e)
+                print(f"CHAVE PÚBLICA: {keys[0]}")
+                print(f"CHAVE PRIVADA: {keys[1]}")
+                ciphered_text = rsa_cypher(int(msg), keys[0])
+                print("Essa é a mensagem cifrada:")
+                print(ciphered_text)
+            else:
+                print("---------------- DECIFRAÇÃO -----------------")
+                msg = input("Digite a mensagem que será decifrada: ")
+                key = input("Digite a sua chave privada: ")
+                private_key = []
+                for i, x in enumerate(key):
+                    if(x == ","):
+                        private_key.append(int(key[1:i]))
+                        private_key.append(int(key[(i+2):-1]))
+                        break
+                deciphered_text = rsa_decypher(int(msg), private_key)
+                print("Essa é a mensagem decifrada:")
+                print(deciphered_text)
+        case "2":
+            print("1 - Cifração em RSA-OAEP")
+            print("2 - Decifração em RSA-OAEP")
+            op = input("Digite sua escolha: ")
+            if(op == "1"):
+                print("---------------- CIFRAÇÃO -----------------")
+                msg = input("Digite a mensagem que será cifrada: ")
+                p = genPrime()
+                q = genPrime()
+                e = 65537
+                keys = genKey(p, q, e)
+                print(f"CHAVE PÚBLICA: {keys[0]}")
+                print(f"CHAVE PRIVADA: {keys[1]}")
+
+                oaep_msg = oaep_encode(msg)
+                oaep_msg_concat = int(str(int.from_bytes(oaep_msg["maskedDB"], 'big'))+str(int.from_bytes(oaep_msg["maskedSeed"], 'big')))
+                ciphered_text = rsa_cypher(int(oaep_msg_concat), keys[0])
+                print("Essa é a mensagem cifrada com o RSA-OAEP:")
+                print(ciphered_text)
+            else:
+                print("---------------- DECIFRAÇÃO -----------------")
+                msg = input("Digite a mensagem que será decifrada: ")
+                key = input("Digite a sua chave privada: ")
+                private_key = []
+                for i, x in enumerate(key):
+                    if(x == ","):
+                        private_key.append(int(key[1:i]))
+                        private_key.append(int(key[(i+2):-1]))
+                        break
+                deciphered_text = rsa_decypher(int(msg), private_key)
+                deciphered_text = deciphered_text.to_bytes(128, byteorder = 'big')
+                print(deciphered_text)
+                deciphered_text = oaep_decode(deciphered_text[:64], deciphered_text[64:])
+                print("Essa é a mensagem decifrada:")
+                print(deciphered_text)
+                
     return

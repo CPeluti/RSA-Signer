@@ -20,10 +20,12 @@ def test_genKey2():
 
 def test_genKey3():
     assert rsa.genKey(5, 17, 11) == ((11, 85), (35, 85))
+
 def test_oaep():
     x = "teste"
-    e = rsa.oaep_encode(x,x)
+    e = rsa.oaep_encode(x)
     res = rsa.oaep_decode(e["maskedSeed"], e["maskedDB"])
     assert x == res
+    
 def test_rsa():
     assert False == True
