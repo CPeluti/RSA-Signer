@@ -116,7 +116,7 @@ def oaep_decode(maskedSeed, maskedDB):
     seed = xor(seedMask, maskedSeed)
     dbMask = hash(seed)
     db = xor(dbMask, maskedDB)
-    return db.decode('utf8').strip("\0")
+    return db.decode('ascii', errors='ignore').strip("\0")
 
 def rsa_decypher(cypher_text, private_key):
     d, n = private_key
@@ -206,7 +206,7 @@ def run():
                 deciphered_text = rsa_decypher(int(msg), private_key)
                 deciphered_text = deciphered_text.to_bytes(128, byteorder = 'big')
                 print(deciphered_text)
-                deciphered_text = oaep_decode(deciphered_text[:64], deciphered_text[64:])
+                deciphered_text = oaep_decode(deciphered_text[:63], deciphered_text[64:])
                 print("Essa é a mensagem decifrada:")
                 print(deciphered_text)
                 
