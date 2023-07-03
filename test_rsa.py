@@ -28,37 +28,17 @@ def test_oaep():
     res = rsa.oaep_decode(e["maskedSeed"], e["maskedDB"])
     assert x == res
     
-# def test_rsa():
-#     p = rsa.genPrime()
-#     q = rsa.genPrime()
-#     e = 65537
-#     keys = rsa.genKey(p, q, e)
-#     msg = 8645
+def test_rsa():
+    keys = rsa.generate_key_pair()
+    msg = 8645
 
-#     res = rsa.rsa_cypher(msg,keys[0])
-#     deciphred_text = rsa.rsa_decypher(res,keys[1])
-#     assert msg == deciphred_text
+    res = rsa.rsa_cypher(msg,keys["public"])
+    deciphred_text = rsa.rsa_decypher(res,keys["private"])
+    assert msg == deciphred_text
 
 def test_rsa_oaep():
-    p = rsa.genPrime()
-    q = rsa.genPrime()
-    e = 65537
-    keys = rsa.genKey(p, q, e)
+    keys = rsa.generate_key_pair()
     msg = "attackatdawn"
+    cipher = rsa.rsa_oaep_encode(msg, keys["public"])
 
-    oaep_msg = rsa.oaep_encode(msg)
-    deciphered_text = rsa.oaep_decode(oaep_msg['maskedSeed'], oaep_msg['maskedDB'])
-    # print(len(oaep_msg["maskedSeed"]))
-    # print(len(oaep_msg["maskedDB"]))
-    # seed_int = int.from_bytes(oaep_msg["maskedSeed"], 'big')
-    # db_int = int.from_bytes(oaep_msg["maskedDB"], 'big')
-    oaep_bytes = bytearray(oaep_msg["maskedSeed"]) + bytearray(oaep_msg["maskedDB"])
-    oaep_msg_concat = int.from_bytes(oaep_bytes, 'big')
-    # 
-    res = rsa.rsa_cypher(oaep_msg_concat,keys[0])
-    deciphered_text = rsa.rsa_decypher(res,keys[1])
-    msg_bytes = bytearray(deciphered_text.to_bytes(128, 'big'))
-    
-    # print((deciphered_text.bit_length() + 7)// 8) 
-    deciphered_text = rsa.oaep_decode(msg_bytes[:64],msg_bytes[64:])
-    assert msg==deciphered_text 
+    assert msg==rsa.rsa_oaep_decode(cipher,keys["private"]) 
