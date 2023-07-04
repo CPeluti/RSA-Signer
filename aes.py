@@ -152,10 +152,17 @@ def mixColumns(state):
         state[i] = mixAColumn(state[i])
     return state
 
-def cipher(input, key):
-    round_keys = key_expand(key)
+def parseMsg(input):
+    input = input.encode('ISO-8859-1')
+    input = int.from_bytes(input, 'big')
     input = input.to_bytes(16, byteorder = 'big')
     input = vec_to_matrix(list(input), 4)
+    return input
+
+def cipher(input):
+    key= random.randint(10**31, 2**128)
+    round_keys = key_expand(key)
+    input = parseMsg(input)
     
     # round inicial
     state = addRoundKey(input, round_keys[0]) 
@@ -191,7 +198,7 @@ def cipher(input, key):
     # print(f"ROUND 10 = {ciphered_text}")
     ciphered_text=int(ciphered_text, base=16)
 
-    return ciphered_text
+    return ciphered_text, key
 
 # ------------------------ DECIFRAÇÃO ------------------------#
 
@@ -215,6 +222,13 @@ def invMixColumns(state):
         state[i] = invMixAColumn(state[i])
     return state
 
+def parseAnswer(state):
+    state = state[0] + state[1] + state[2] + state[3]
+    print(state)
+    deciphered_text = "".join(map(chr, state))
+    return deciphered_text.strip('\0')
+
+
 def decipher(input, key):
     round_keys = key_expand(key)
     input = input.to_bytes(16, byteorder = 'big')
@@ -235,14 +249,7 @@ def decipher(input, key):
     state = sub_word(state, True)
     state = addRoundKey(state, round_keys[0])
 
-    deciphered_text=""
-    for l in state:
-        for n in l:
-            if(len(hex(n)[2:]) == 1):
-                deciphered_text+="0"
-            deciphered_text+=(hex(n)[2:])
-
-    return int(deciphered_text, 16)
+    return parseAnswer(state)
 
 # ------------------------ GCM ---------------------------#
 def gcmCipher(msg, key):
@@ -267,9 +274,9 @@ def run():
                 print("---------------- CIFRAÇÃO -----------------")
                 msg = input("Digite a mensagem que será cifrada: ")
                 # msg=random.randint(10**31, 2**128)
-                key=random.randint(10**31, 2**128)
-                print(f"Essa é a chave: {key}")
-                ciphered_text = cipher(int(msg), key)
+                # key=random.randint(10**31, 2**128)
+                # print(f"Essa é a chave: {key}")
+                ciphered_text = cipher(msg)
                 print(ciphered_text)
             else:
                 print("---------------- DECIFRAÇÃO -----------------")

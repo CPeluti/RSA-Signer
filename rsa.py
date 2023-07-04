@@ -75,7 +75,8 @@ def generate_random_number(bits):
     return random.getrandbits(bits).to_bytes(64, 'big')
 
 def gen_message(message, size):
-    m = message.encode('ISO-8859-1')
+    # m = message.encode('ISO-8859-1')
+    m = base64.b64decode(message)
     m = m+(size-len(m))*b'\0'
     return m
 
@@ -94,10 +95,8 @@ def oaep_encode(message):
     seed = generate_random_number(512)
     #result da hash da função g
     res_g = hash(seed)
-
     # mensagem com o padding
     m =  gen_message(message, len(res_g))
-
     # primeiro xor
     x = xor(res_g, m)
     
@@ -116,7 +115,9 @@ def oaep_decode(maskedSeed, maskedDB):
     seed = xor(seedMask, maskedSeed)
     dbMask = hash(seed)
     db = xor(dbMask, maskedDB)
-    return db.decode('ISO-8859-1').strip('\0')
+    db = db.decode('ISO-8859-1').strip('\0')
+    # print(db.decode('ascii'))
+    return db
 
 def rsa_decypher(cypher_text, private_key):
     d, n = private_key
@@ -131,17 +132,18 @@ def generate_key_pair():
 
 def rsa_oaep_encode(message, public_key):
     oaep_msg = oaep_encode(message)
-    deciphered_text = oaep_decode(oaep_msg['maskedSeed'], oaep_msg['maskedDB'])
     oaep_bytes = bytearray(oaep_msg["maskedSeed"]) + bytearray(oaep_msg["maskedDB"])
     oaep_msg_concat = int.from_bytes(oaep_bytes, 'big')
     # 
     return rsa_cypher(oaep_msg_concat,public_key)
+
 def rsa_oaep_decode(cipher, private_key):
     deciphered_text = rsa_decypher(cipher,private_key)
     msg_bytes = bytearray(deciphered_text.to_bytes(128, 'big'))
     
     # print((deciphered_text.bit_length() + 7)// 8) 
     return oaep_decode(msg_bytes[:64],msg_bytes[64:])
+
 def run():
     
     return
