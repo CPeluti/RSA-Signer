@@ -80,6 +80,8 @@ def convert_message(message):
     if(len(m)>=128):
         n = 128
         m = [m[i:i+n] for i in range(0, len(m), n)]
+    else:
+        m = [m]
     return m
 def deconvert_message(message_bytes):
     message = message_bytes.decode('ISO-8859-1').strip('\0')
@@ -88,7 +90,6 @@ def gen_message(message, size):
     # m = message.encode('ISO-8859-1')
     # m = base64.b64decode(message)
     m = message+(size-len(message))*b'\0'
-    print(len(message))
     return m
 def MGF1(seed, length):
     b = bytes()
@@ -145,18 +146,31 @@ def generate_key_pair():
     return {"private": keys[0], "public": keys[1]}
 
 def rsa_oaep_encode(message, public_key):
-    oaep_msg = oaep_encode(message)
-    oaep_bytes = bytearray(oaep_msg["maskedSeed"]) + bytearray(oaep_msg["maskedDB"])
-    oaep_msg_concat = int.from_bytes(oaep_bytes, 'big')
+    rsa_encoded = bytearray()
+    for byte_array in message:
+        oaep_msg = oaep_encode(byte_array)
+        oaep_bytes = bytearray(oaep_msg["maskedSeed"]) + bytearray(oaep_msg["maskedDB"])
+        oaep_msg_concat = int.from_bytes(oaep_bytes, 'big')
+        cipher = rsa_cypher(oaep_msg_concat,public_key)
+
+        cipher = cipher.to_bytes(256,'big')
+        rsa_encoded+=cipher
     # 
-    return rsa_cypher(oaep_msg_concat,public_key)
+    # 
+    b64 = base64.b64encode(rsa_encoded)
+    return b64
 
 def rsa_oaep_decode(cipher, private_key):
-    deciphered_text = rsa_decypher(cipher,private_key)
-    msg_bytes = bytearray(deciphered_text.to_bytes(256, 'big'))
+    decoded_msg = ''
+    for block in cipher:
+        number = int.from_bytes(block, 'big')
+        deciphered_text = rsa_decypher(number,private_key)
+        msg_bytes = bytearray(deciphered_text.to_bytes(256, 'big'))
+        res = oaep_decode(msg_bytes[:128],msg_bytes[128:])
+        decoded_msg+=deconvert_message(res)
     
     # print((deciphered_text.bit_length() + 7)// 8) 
-    return oaep_decode(msg_bytes[:128],msg_bytes[128:])
+    return decoded_msg
 
 def run():
     
