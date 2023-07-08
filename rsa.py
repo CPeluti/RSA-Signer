@@ -1,6 +1,7 @@
 import random
 import hashlib
 import base64
+from textwrap import wrap
 def millerRabin(d,n):
     a  = 2 + random.randint(1,(n-4))
     x = pow(a,d,n)
@@ -72,27 +73,40 @@ def genKey(p, q, e=None):
     return ((e, n), (d, n)) # (public, private)
 
 def generate_random_number(bits):
-    return random.getrandbits(bits).to_bytes(64, 'big')
+    return random.getrandbits(bits).to_bytes(128, 'big')
 
+def convert_message(message):
+    m = message.encode('ISO-8859-1')
+    if(len(m)>=128):
+        n = 128
+        m = [m[i:i+n] for i in range(0, len(m), n)]
+    return m
+def deconvert_message(message_bytes):
+    message = message_bytes.decode('ISO-8859-1').strip('\0')
+    return message
 def gen_message(message, size):
     # m = message.encode('ISO-8859-1')
-    m = base64.b64decode(message)
-    m = m+(size-len(m))*b'\0'
+    # m = base64.b64decode(message)
+    m = message+(size-len(message))*b'\0'
+    print(len(message))
     return m
-
+def MGF1(seed, length):
+    b = bytes()
+    for i in range(0, length//64+1):
+        b+=hashlib.sha3_512(seed + int.to_bytes(i, 4, 'big')).digest()
+    return b[0:length]
 def hash(input):
-    f = hashlib.sha3_512()
-    f.update(input)
-    return f.digest()
+    h = MGF1(input, 128)
+    return h
 
 def xor(a,b):
     int_a=int.from_bytes(a,'big')
     int_b=int.from_bytes(b,'big')
     res = int_a^int_b
-    return res.to_bytes(64,'big')
+    return res.to_bytes(128,'big')
 
 def oaep_encode(message):
-    seed = generate_random_number(512)
+    seed = generate_random_number(1024)
     #result da hash da função g
     res_g = hash(seed)
     # mensagem com o padding
@@ -115,7 +129,7 @@ def oaep_decode(maskedSeed, maskedDB):
     seed = xor(seedMask, maskedSeed)
     dbMask = hash(seed)
     db = xor(dbMask, maskedDB)
-    db = db.decode('ISO-8859-1').strip('\0')
+    # db = db.decode('ISO-8859-1').strip('\0')
     # print(db.decode('ascii'))
     return db
 
@@ -139,10 +153,10 @@ def rsa_oaep_encode(message, public_key):
 
 def rsa_oaep_decode(cipher, private_key):
     deciphered_text = rsa_decypher(cipher,private_key)
-    msg_bytes = bytearray(deciphered_text.to_bytes(128, 'big'))
+    msg_bytes = bytearray(deciphered_text.to_bytes(256, 'big'))
     
     # print((deciphered_text.bit_length() + 7)// 8) 
-    return oaep_decode(msg_bytes[:64],msg_bytes[64:])
+    return oaep_decode(msg_bytes[:128],msg_bytes[128:])
 
 def run():
     
