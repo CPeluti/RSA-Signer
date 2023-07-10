@@ -15,7 +15,7 @@ def millerRabin(d,n):
 
 def isPrime(n, k):
     if (n <= 1 or n == 4):
-        return False;
+        return False
     if n <= 3:
         return True
     d = n-1
@@ -29,7 +29,7 @@ def isPrime(n, k):
 def genPrime():
     while(True):
         num = random.getrandbits(1024)
-        if(isPrime(num,15)):
+        if(isPrime(num,40)):
             return num
         
 def extendEuclid(a, b):
@@ -173,5 +173,70 @@ def rsa_oaep_decode(cipher, private_key):
     return decoded_msg
 
 def run():
-    
+     # res = oaep_encode("teste")
+    # res2= oaep_decode(res["maskedSeed"], res["maskedDB"])
+    # print(res, res2)
+
+    print("Escolha o modo do RSA:")
+    print("1 - RSA")
+    print("2 - RSA-OAEP")
+    op = input("Digite sua escolha: ")
+    match op:
+        case "1":
+            print("1 - Cifração em RSA")
+            print("2 - Decifração em RSA")
+            op = input("Digite sua escolha: ")
+            if(op == "1"):
+                print("---------------- CIFRAÇÃO -----------------")
+                msg = input("Digite a mensagem que será cifrada: ")
+                keys = generate_key_pair()
+                print(f"CHAVE PÚBLICA: {keys['public']}")
+                print(f"CHAVE PRIVADA: {keys['private']}")
+                ciphered_text = rsa_cypher(int(msg), keys['public'])
+                print("Essa é a mensagem cifrada:")
+                print(ciphered_text)
+            else:
+                print("---------------- DECIFRAÇÃO -----------------")
+                msg = input("Digite a mensagem que será decifrada: ")
+                key = input("Digite a sua chave privada: ")
+                private_key = []
+                for i, x in enumerate(key):
+                    if(x == ","):
+                        private_key.append(int(key[1:i]))
+                        private_key.append(int(key[(i+2):-1]))
+                        break
+                deciphered_text = rsa_decypher(int(msg), private_key)
+                print("Essa é a mensagem decifrada:")
+                print(deciphered_text)
+        case "2":
+            print("1 - Cifração em RSA-OAEP")
+            print("2 - Decifração em RSA-OAEP")
+            op = input("Digite sua escolha: ")
+            if(op == "1"):
+                print("---------------- CIFRAÇÃO -----------------")
+                msg = input("Digite a mensagem que será cifrada: ")
+                keys = generate_key_pair()
+                print(f"CHAVE PÚBLICA: {keys['public']}")
+                print(f"CHAVE PRIVADA: {keys['private']}")
+                msg = convert_message(msg)
+                ciphered_text = rsa_oaep_encode(msg, keys['public'])
+                ciphered_text= ciphered_text.decode('ascii')
+                print("Essa é a mensagem cifrada com o RSA-OAEP:")
+                print(ciphered_text)
+            else:
+                print("---------------- DECIFRAÇÃO -----------------")
+                msg = input("Digite a mensagem que será decifrada: ")
+                msg = msg.encode('ascii')
+                barray = base64.b64decode(msg)
+                blocks = [barray[i:i+256] for i in range(0, len(barray), 256)]
+                key = input("Digite a sua chave privada: ")
+                private_key = []
+                for i, x in enumerate(key):
+                    if(x == ","):
+                        private_key.append(int(key[1:i]))
+                        private_key.append(int(key[(i+2):-1]))
+                        break
+                deciphered_text=rsa_oaep_decode(blocks, private_key)
+                print("Essa é a mensagem decifrada:")
+                print(deciphered_text)
     return

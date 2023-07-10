@@ -66,6 +66,7 @@ def test_rsa_long_message():
     barray = base64.b64decode(b64)
     blocks = [barray[i:i+256] for i in range(0, len(barray), 256)]
     res = rsa.rsa_oaep_decode(blocks, private)
+    
     assert res == msg
 
     
