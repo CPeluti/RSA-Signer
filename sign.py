@@ -40,4 +40,4 @@ def run():
 
     # print(is_assig)
 
-    return
+    return is_assig
