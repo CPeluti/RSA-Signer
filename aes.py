@@ -224,7 +224,6 @@ def invMixColumns(state):
 
 def parseAnswer(state):
     state = state[0] + state[1] + state[2] + state[3]
-    print(state)
     deciphered_text = "".join(map(chr, state))
     return deciphered_text.strip('\0')
 
@@ -277,13 +276,13 @@ def run():
                 # key=random.randint(10**31, 2**128)
                 # print(f"Essa é a chave: {key}")
                 ciphered_text = cipher(msg)
-                print(ciphered_text)
+                print(f"MENSAGEM CIFRADA: {ciphered_text}")
             else:
                 print("---------------- DECIFRAÇÃO -----------------")
                 msg = input("Digite a mensagem que será decifrada: ")
                 key = input("Digite a chave: ")
                 deciphered_text = decipher(int(msg), int(key))
-                print(deciphered_text)
+                print(f"MENSAGEM DECIFRADA: {deciphered_text}")
         case _:
             print("1 - Cifração em AES-GCM")
             print("2 - Decifração em AES-GCM")

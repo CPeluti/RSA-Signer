@@ -7,7 +7,7 @@ print("3 - Assinatura")
 op = input("Digite uma opção: ")
 if(op == "1"):
     aes.run()
-if(op == "2"):
+elif(op == "2"):
     rsa.run()
 else:
     sign.run()
